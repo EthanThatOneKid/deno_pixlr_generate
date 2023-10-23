@@ -1,3 +1,5 @@
+import { decodeBase64 } from "https://deno.land/std@0.204.0/encoding/base64.ts";
+
 if (import.meta.main) {
   await generate({
     width: 512,
@@ -49,6 +51,20 @@ async function generate(o: GenerateOptions) {
     credentials: "include",
   })
     .then((res) => res.json())
-    .then(console.log)
+    .then((res) => {
+      console.log(res);
+      return res.data as string[];
+    })
+    .then((res) =>
+      Promise.all(
+        res.map((uri: string, i) => writeFile(`./out_${i}.png`, uri)),
+      )
+    )
     .catch(console.error);
+}
+
+async function writeFile(path: string, uri: string) {
+  const { 1: b64url } = uri.split(",");
+  const data = decodeBase64(b64url);
+  await Deno.writeFile(path, data);
 }
